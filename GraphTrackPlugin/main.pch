@@ -1,0 +1,32 @@
+//
+//  main.pch
+//  GraphTrackPlugin
+//
+//  Created by Olzhas Kadyrakun on 26/12/2018.
+//  Copyright © 2018 Olzhas Kadyrakunov. All rights reserved.
+//
+using namespace cv;
+using namespace std;
+
+extern "C" {
+    void compute_average_color();
+    void write_mat_to_file(Mat mat, string filename);
+    Mat flatten(Mat patch);
+    void read_video();
+    PCA computePCA_basis();
+    void compress_all_patches(PCA pca);
+//    void on_mouse_click(int event, int x, int y, int flags, void* userdata);
+//    void on_trackbar(int, void* args);
+    void mark_interest_point();
+    void mark_all_interest_points();
+    float approximate_distance_to_positive_patches(int frame, int y, int x);
+    float distance_to_positive_patches(int frame, int node);
+    float distance_to_negative_patches(int frame, int node);
+    void select_candidates();
+    void compress_video();
+    void djikstra();
+    void play_final_video();
+//    int main(int argc, const char * argv[]);
+    void precomputations();
+    void compute_path(); 
+}
