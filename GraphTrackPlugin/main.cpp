@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <fstream>
 #include <stdlib.h>     /* srand, rand */
 #include <vector>
 #include <ctime>
@@ -225,39 +226,22 @@ void mark_interest_point(int frame_number, int x, int y)
 
 void mark_all_interest_points() {
     // get data from the txt file
+    string line;
+    ifstream myfile ("/Users/kadyrakunovolzhas/Desktop/LiveSketch/Unity_C++_communication/interest_points.txt");
+    stringstream ssin;
+    int frame_number;
+    int x;
+    int y;
     
+    while ( getline (myfile,line) ){
+        ssin = stringstream(line);
+        ssin >> frame_number;
+        ssin >> x;
+        ssin >> y;
+        mark_interest_point(frame_number, x, y);
+    }
     // repeatedly call mark_interest_point()
 }
-
-//// Displays the frame (with a rectangle on it). Doesn't do anything else.
-//void on_trackbar(int, void* args) {
-//    //    cout << "current trackbar frame: " << current_frame_number << endl;
-//    current_frame = frames_unnormalized[current_frame_number].clone();
-//    // find where the interest point is, and put a rectangle there
-//    Point next_node_coordinate = candidate_nodes_coordinates[current_frame_number][retraced_path[current_frame_number]];
-//    int x = next_node_coordinate.x;
-//    int y = next_node_coordinate.y;
-//    rectangle(current_frame, Point(x,y), Point(x + patch_width, y + patch_height), Scalar(0,0,0), 3);
-//
-//    imshow(window_name, current_frame);
-//    //    waitKey(0);
-//
-//}
-//// I WANT NONE-NORMALIZED FRAMES TO BE DISPLAYED
-//void mark_interest_points() {
-//    cout << "Mark interest points" << endl;
-//    namedWindow(window_name); //create a window
-//
-//    current_frame = frames_unnormalized[0]; /////////////////////////// ALWAYS CALLED WITH THE 1ST FRAME
-//    setMouseCallback(window_name, on_mouse_click, &current_frame);
-//    imshow(window_name, current_frame);
-//    //// CURRENT_FRAME_NUMBER NEEDS TO BE UPDATED BEFORE HAND (OR MAYBE IT'S NOT EVEN NEEDED)
-//    createTrackbar( "frames", "my_window", &current_frame_number, last_frame_number - 1, on_trackbar);
-//
-//    /// Wait until user press some key
-//    while(waitKey() != 27); //27 is the keycode for ESC
-//    //    destroyAllWindows();  // the same window will be used to play the final video
-//}
 
 
 /*
@@ -540,36 +524,19 @@ void play_final_video() {
     }
 }
 
+
+
+
 Mat image = imread("/Users/kadyrakunovolzhas/Desktop/LowLevelPlugin/image1.jpg");
+
 int display_image() {
     if (image.empty())
     {
         return -1;
     }
-    //    namedWindow("Display window");
-    //    imshow( "Display window",  image);
-    //    waitKey(0);
     return 7;
 }
 
-//int main(int argc, const char * argv[]) {
-//    read_video(); // fast
-//    compress_video(); // slow, but that's expected. "The feature extraction runs at about 1 frame in 3 sec on a commodity PC" - at 10x10 patcfhes. 1 frame in 4 sec for 15x15 patches.
-//    
-//    // only do it in the first frame. If the resulting path has errors, corrections will be made later (in play_final_video())
-//    mark_interest_points(); // fast.  MULTIPLE INTEREST POINTS SHOULD BE MARKED IN THE FIRST FRAME
-//    
-//    // SHOULD GO IN A LOOP OVER ALL INTEREST POINTS
-//    select_candidates(); // slow (when 5 points marked; pretty fast when 1 point marked => linear in points marked). Precision is such that I end up marking 5 interest points throughout the video anyway, but it's better to do it aftwerwards, when I see the exact frames where the point is hard to recognize.
-//    djikstra(); // fast => no need to use the modified version of Djikstra.
-//    // SHOULD GO IN A LOOP OVER ALL INTEREST POINTS
-//    
-//    /* it will display the result, which can be corrected (by replacing the rectangles in some frames). After that it go back to recomputing the final trajectory and play the final video.
-//     * Press ENTER - to recompute the path. ESC - to exit
-//     */
-//    play_final_video(); // fast
-//    //    cout << display_image() << endl;
-//}
 
 void precomputations() {
     read_video();
@@ -592,6 +559,30 @@ void compute_path() {
      * See play_final_video() on how to reconstruct the path using those two arrays.
      * OR why not do all the computations here and only pass one txt file.
      */
+    
+    // retrace path
+    // retrace the path
+    int next_pointer = sink_parent_pointer;
+    for (int i = 0; i < last_frame_number; i++) {
+        retraced_path[last_frame_number - i - 1] = next_pointer;
+        next_pointer = parent_pointers[last_frame_number - i - 1][next_pointer];
+    }
+    
+    // extract the coordinates from the retraced_path
+    Point next_node_coordinate;
+    int x;
+    int y;
+    ofstream myfile;
+    myfile.open  ("/Users/kadyrakunovolzhas/Desktop/LiveSketch/Unity_C++_communication/computed_path.txt", std::ios::app);
+    
+    for (int i = 0; i < last_frame_number; i++) {
+        next_node_coordinate = candidate_nodes_coordinates[i][retraced_path[i]];
+        x = next_node_coordinate.x;
+        y = next_node_coordinate.y;
+        // write into a file
+        myfile << i << " " << x << " " << y << endl;
+    }
+    myfile.close();
     
 }
 
