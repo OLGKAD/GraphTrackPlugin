@@ -54,7 +54,7 @@ void initialize_global_vars_again() {
  * Substracts the average color from every pixel in the video, before it's used in PCA.
  */
 void compute_average_color() {
-    cout << "Computing average color" << endl;
+//    cout << "Computing average color" << endl;
     Mat average_frame(height, width, CV_32FC3, Scalar(0));
     Scalar average_color;
     Mat temp1;
@@ -100,14 +100,14 @@ Mat flatten(Mat patch) {
 
 // fills out the "frames" array
 void read_video() {
-    cout << "Reading the video" << endl;
-    VideoCapture cap("/Users/kadyrakunovolzhas/Desktop/LowLevelPlugin/image1.jpg /Users/kadyrakunovolzhas/Desktop/Spring\ 2018/Computer\ Graphics/CG\ final\ project/Assets/rabbit_fast.avi");
-    
-    if (cap.isOpened() == false)
-    {
-        cout << "Cannot open the video" << endl;
-        cin.get(); //wait for any key press
-    }
+//    cout << "Reading the video" << endl;
+//    VideoCapture cap("/Users/kadyrakunovolzhas/Desktop/LowLevelPlugin/image1.jpg /Users/kadyrakunovolzhas/Desktop/Spring\ 2018/Computer\ Graphics/CG\ final\ project/Assets/rabbit_fast.avi");
+    VideoCapture cap("rabbit_fast.avi");
+//    if (cap.isOpened() == false)
+//    {
+//        cout << "Cannot open the video" << endl;
+//        cin.get(); //wait for any key press
+//    }
     
     int frameNumber = -1;
     Mat frame;
@@ -136,7 +136,7 @@ void read_video() {
 }
 
 PCA computePCA_basis() {
-    cout << "Running PCA" << endl;
+//    cout << "Running PCA" << endl;
     
     Mat frame;
     Mat frame_temp;
@@ -162,7 +162,7 @@ PCA computePCA_basis() {
 
 // use the PCA basis (16 eigenvectors) to project each patch vector in every frame to a 16-vector space
 void compress_all_patches(PCA pca) {
-    cout << "Compressing the video" << endl;
+//    cout << "Compressing the video" << endl;
     Mat eigenvalues = pca.eigenvalues;
     Mat eigenvectors = pca.eigenvectors;
     
@@ -171,7 +171,7 @@ void compress_all_patches(PCA pca) {
     Mat transposed_patch(patch_height * patch_width * 3, 1, CV_32FC1);
     Mat compressed_patch(patch_height * patch_width * 3, 1, CV_32FC1);
     for (int i = 0; i < last_frame_number; i++) {
-        cout << " frame number: " << i << endl;
+//        cout << " frame number: " << i << endl;
         frame_temp = frames[i];
         frame_temp.convertTo(frame, CV_32FC3);
         
@@ -309,7 +309,7 @@ float distance_to_negative_patches(int frame, int node) {
 // candidate selection::: UNTESTED
 // selects 200-200 nodes (patches) in each frame, resembling the interest points the most.
 void select_candidates() {
-    cout << "Candidate nodes are being chosen" << endl;
+//    cout << "Candidate nodes are being chosen" << endl;
     /* we'll have (w-4) * (h-4) values, and we'll need the 200 smallest. Sorting will cost O(w*h * log(w*h)). Finding 200 smallest costs O(w*h * 200), which is faster.
      So, we'll first find the min, then the min of the rest, etc.
      */
@@ -355,7 +355,7 @@ void compress_video() {
 
 // assumes that candidate nodes have already been selected, and interest points marked
 void djikstra() {
-    cout << "Running Djikstra Algorithm" << endl;
+//    cout << "Running Djikstra Algorithm" << endl;
     // Initialize all the appropriate matrices
     for (int i = 0; i < last_frame_number; i++) {
         if (has_interest_point[i] != true) {
