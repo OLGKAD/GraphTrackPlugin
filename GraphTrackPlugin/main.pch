@@ -15,8 +15,6 @@ extern "C" {
     void read_video();
     PCA computePCA_basis();
     void compress_all_patches(PCA pca);
-//    void on_mouse_click(int event, int x, int y, int flags, void* userdata);
-//    void on_trackbar(int, void* args);
     void mark_interest_point();
     void mark_all_interest_points();
     float approximate_distance_to_positive_patches(int frame, int y, int x);
@@ -26,7 +24,6 @@ extern "C" {
     void compress_video();
     void djikstra();
     void play_final_video();
-//    int main(int argc, const char * argv[]);
     void precomputations();
     void compute_path(); 
 }
