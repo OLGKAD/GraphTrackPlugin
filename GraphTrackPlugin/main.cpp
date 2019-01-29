@@ -23,11 +23,11 @@ Mat candidate_nodes[45][200] = {}; // 200 candidates patches, per each frame
 Point candidate_nodes_coordinates[45][200] = {};
 uchar expanded[45][200] = {}; // 1 - if expanded; 0 - not expanded; -1 - node doesn't exist
 
-int width = 720; // 256; // 720;
-int height = 528; // 240; //528;
+int width = 720;
+int height = 528;
 int patch_width = 15;  // becomes too slow at 20. LiveSketch used 9x9 patches
 int patch_height = 15; // 15x15 is what they used in GraphTrack (page. 7 in the paper)
-int patches_per_frame = 40000; // 1/8 of all patches, needed for PCA. COULD IT BE DECREASED?
+int patches_per_frame = 40000; // 1/8 of all patches, needed for PCA.
 int last_frame_number = 45;
 int retraced_path[45];
 int current_frame_number = 0;
@@ -46,17 +46,11 @@ float distance_from_source[45][200] = {}; // stores distances to each node from 
 int parent_pointers[45][200] = {}; // needed to recover the path after a run of Djikstra. Every element stores the index of parent node in the previous row.
 int sink_parent_pointer;
 
-// only vars that could've changed (and the change accumulates)
-void initialize_global_vars_again() {
-    
-}
-
 
 /* computes the average color of the video: sum all the pixel RGB values (over all pixels, over all frames) and divide by the #pixels (width * height * frames).  AND
  * Substracts the average color from every pixel in the video, before it's used in PCA.
  */
 void compute_average_color() {
-//    cout << "Computing average color" << endl;
     Mat average_frame(height, width, CV_32FC3, Scalar(0));
     Scalar average_color;
     Mat temp1;
@@ -64,12 +58,10 @@ void compute_average_color() {
         frames_unnormalized[i].convertTo(temp1, CV_32FC3);
         average_frame += temp1;
     }
-    //    write_mat_to_file(average_frame, "sum_of_frames");
     average_frame /= last_frame_number;
     average_color = sum(average_frame) / (height * width);
-    //    write_mat_to_file(average_frame, "average_frame");
     
-    // now subtract average color from every pixel of every frame
+    // subtract average color from every pixel of every frame
     Mat temp2;
     for (int i = 0; i < last_frame_number; i++) {
         frames_unnormalized[i].convertTo(temp2, CV_32FC3);
@@ -84,14 +76,12 @@ void write_mat_to_file(Mat mat, string filename) {
     file << filename << mat; // the matrix in the file will be named the same as the filename here.
 }
 
-// another version of "flatten". As of now, it's faster
-/////////////////////////////////////// SOLUTION: seems like the only way to speed things up is to understand that "CONVOLUTIONS" part
+// Transforms a 2D Mat into a 1D Mat
 Mat flatten(Mat patch) {
     Mat bgr[3];   //destination array
     split(patch,bgr);//split source
     Mat result;
     // stack the channels into a new mat:
-    // this loop really SLOWS things down
     for (int i=0; i<3; i++)
         result.push_back(bgr[i]);
     result = result.reshape(1,1);
@@ -100,10 +90,8 @@ Mat flatten(Mat patch) {
     
 }
 
-// fills out the "frames" array
+// reads the video and fills out the "frames" array by storing the frames there
 void read_video() {
-//    cout << "Reading the video" << endl;
-//    VideoCapture cap("/Users/kadyrakunovolzhas/Desktop/LowLevelPlugin/image1.jpg /Users/kadyrakunovolzhas/Desktop/Spring\ 2018/Computer\ Graphics/CG\ final\ project/Assets/rabbit_fast.avi");
     VideoCapture cap("rabbit_fast.avi");
     int frameNumber = -1;
     Mat frame;
@@ -129,11 +117,15 @@ void read_video() {
     
     write_mat_to_file(frames_unnormalized[0], "frames_unnormalized_0");
     write_mat_to_file(frames[0], "frames_0");
+    
+    // store all frames
+    for (int i = 0; i < last_frame_number; i++) {
+        write_mat_to_file(frames_unnormalized[i], "all_frames_unnormalized");
+    }
 }
 
+// perform the PCA algorithm
 PCA computePCA_basis() {
-//    cout << "Running PCA" << endl;
-    
     Mat frame;
     Mat frame_temp;
     for (int i = 0; i < last_frame_number; i++) {
@@ -160,13 +152,14 @@ PCA computePCA_basis() {
 void compress_all_patches(PCA pca) {
     Mat eigenvalues = pca.eigenvalues;
     Mat eigenvectors = pca.eigenvectors;
+    write_mat_to_file(eigenvalues, "eigenvalues");
+    write_mat_to_file(eigenvalues, "eigenvectors");
     
     Mat frame_temp;
     Mat frame;
     Mat transposed_patch(patch_height * patch_width * 3, 1, CV_32FC1);
     Mat compressed_patch(patch_height * patch_width * 3, 1, CV_32FC1);
     for (int i = 0; i < last_frame_number; i++) {
-//        cout << " frame number: " << i << endl;
         frame_temp = frames[i];
         frame_temp.convertTo(frame, CV_32FC3);
         
@@ -186,11 +179,7 @@ void compress_all_patches(PCA pca) {
 void mark_interest_point(int frame_number, int x, int y)
 {
     // the point of click is the center of the rectangle. However patches are defined by their top-left corner => x and y should be adjusted.
-
-    //// DO
     candidate_nodes_coordinates[frame_number][0] = Point(x, y);
-    
-    //// DO
     // save the positive patch
     positive_patches[positive_patch_counter] = compressed_patches[frame_number][y][x].clone();
     positive_patch_counter += 1;
@@ -220,6 +209,7 @@ void mark_interest_point(int frame_number, int x, int y)
     
 }
 
+// reads the coordinates of the interest points from a txt file (that was filled in a C# function in Unity)
 void mark_all_interest_points() {
     // get data from the txt file
     string line;
@@ -271,8 +261,6 @@ float distance_to_positive_patches(int frame, int node) {
         }
     }
     
-    //    closest_distance *= lambda_f;
-    
     return closest_distance;
 }
 
@@ -294,12 +282,9 @@ float distance_to_negative_patches(int frame, int node) {
         closest_distance = sigma_b;
     }
     
-    //    closest_distance *= lambda_b;
-    
     return closest_distance;
 }
 
-// candidate selection::: UNTESTED
 // selects 200-200 nodes (patches) in each frame, resembling the interest points the most.
 void select_candidates() {
     /* we'll have (w-4) * (h-4) values, and we'll need the 200 smallest. Sorting will cost O(w*h * log(w*h)). Finding 200 smallest costs O(w*h * 200), which is faster.
@@ -310,7 +295,7 @@ void select_candidates() {
     double maxVal;
     Point minLoc;
     Point maxLoc;
-    /////////////////// ERROR: <= 72 check is not performed
+
     for (int i = 0; i < last_frame_number; i++) {
         // if an interest point was marked in this frame => then only one node will be chosen
         if (has_interest_point[i]) {
@@ -340,14 +325,11 @@ void select_candidates() {
 // each patch will be represented using 16 numbers (instead of 450), and everything will be stored in compressed_video array;
 void compress_video() {
     PCA pca = computePCA_basis();
-    //    write_mat_to_file(pca.eigenvectors, "PCA_eigenvectors");
-    compress_all_patches(pca); // runs at about 5-10 sec / frame, depending on a day... . Fine for now.
-    //    write_mat_to_file(compressed_patches[0][0][0], "first_compressed_patch");
+    compress_all_patches(pca); // runs at 5-10 sec/frame
 }
 
 // assumes that candidate nodes have already been selected, and interest points marked
 void djikstra() {
-//    cout << "Running Djikstra Algorithm" << endl;
     // Initialize all the appropriate matrices
     for (int i = 0; i < last_frame_number; i++) {
         if (has_interest_point[i] != true) {
@@ -426,7 +408,7 @@ void djikstra() {
                     distance_from_source[min_node_frame + 1][0] = distance_from_source[min_node_frame][min_node_number] + temp_edge + temp_node;
                     parent_pointers[min_node_frame + 1][0] = min_node_number;
                 }
-                // the next layer has many nodes
+            // the next layer has many nodes
             } else {
                 Mat temp;
                 Point node_pos_1 = candidate_nodes_coordinates[min_node_frame][min_node_number];
@@ -463,7 +445,6 @@ void compute_path() {
     select_candidates();
     djikstra();
 
-    // retrace path
     // retrace the path
     int next_pointer = sink_parent_pointer;
     for (int i = 0; i < last_frame_number; i++) {
